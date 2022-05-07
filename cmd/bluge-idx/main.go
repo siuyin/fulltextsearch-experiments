@@ -26,10 +26,36 @@ func createFullTextIndex(em *embnats.Server) {
 	doc.Init(os.Args[1])
 	idx.InitWriter()
 	defer idx.WriterClose()
+
+	//singleAdd(em)
+	batchAdd(em, batchSize())
+	fmt.Println("\nindexed and ready for queries")
+}
+
+func batchSize() int {
+	n, err := dflt.EnvInt("BLUGE_BATCHSIZE", 500)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return n
+}
+
+func singleAdd(em *embnats.Server) {
 	for r := doc.Read(); r != nil; r = doc.Read() {
 		fmt.Println(r[doc.ShowID])
 		idx.Add(r)
 		em.KVPut(r[doc.ShowID], r)
+	}
+}
+
+func batchAdd(em *embnats.Server, size int) {
+	n := 0
+	for {
+		n = idx.AddBatch(em, size)
+		fmt.Print(".")
+		if n != size {
+			break
+		}
 	}
 }
 

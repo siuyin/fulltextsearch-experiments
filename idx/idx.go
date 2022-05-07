@@ -18,6 +18,7 @@ var (
 	err    error
 )
 
+// InitWriter sets up a search index writer.
 func InitWriter() {
 	config = bluge.DefaultConfig(dflt.EnvString("BLUGE_PATH", "./blugeidx"))
 	w, err = bluge.OpenWriter(config)
@@ -26,6 +27,7 @@ func InitWriter() {
 	}
 }
 
+// WriterClose closes the search index writer.
 func WriterClose() {
 	err = w.Close()
 	if err != nil {
@@ -33,6 +35,7 @@ func WriterClose() {
 	}
 }
 
+// InitReader sets up a search index reader.
 func InitReader() {
 	config = bluge.DefaultConfig(dflt.EnvString("BLUGE_PATH", "./blugeidx"))
 	config.DefaultSearchField = doc.Title.String()
@@ -43,6 +46,7 @@ func InitReader() {
 	}
 }
 
+// ReaderClose closes the search index reader.
 func ReaderClose() {
 	err = r.Close()
 	if err != nil {
@@ -50,7 +54,40 @@ func ReaderClose() {
 	}
 }
 
+// Add adds a document to be indexed.
 func Add(rec []string) {
+	d := newDoc(rec)
+
+	err = w.Update(d.ID(), d)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("   Added: ", rec[doc.Title])
+}
+
+// AddBatch add n documents to the search index and returns the number of entries added.
+func AddBatch(em *embnats.Server, n int) int {
+	b := bluge.NewBatch()
+
+	i := 0
+	for rec := doc.Read(); rec != nil; rec = doc.Read() {
+		d := newDoc(rec)
+		b.Update(d.ID(), d)
+		em.KVPut(rec[doc.ShowID], rec)
+		//fmt.Println(i, rec[doc.Title])
+
+		i++
+		if i == n {
+			break
+		}
+	}
+	w.Batch(b)
+
+	return i
+}
+
+func newDoc(rec []string) *bluge.Document {
 	d := bluge.NewDocument(rec[doc.ShowID])
 	d.AddField(bluge.NewTextField(doc.Type.String(), rec[doc.Type]))
 	d.AddField(bluge.NewTextField(doc.Title.String(), rec[doc.Title]))
@@ -64,14 +101,10 @@ func Add(rec []string) {
 	d.AddField(bluge.NewTextField(doc.ListedIn.String(), rec[doc.ListedIn]))
 	d.AddField(bluge.NewTextField(doc.Description.String(), rec[doc.Description]))
 
-	err = w.Update(d.ID(), d)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Println("   Added: ", rec[doc.Title])
+	return d
 }
 
+// TopNSearch searches for the top n matches given search term s.
 func TopNSearch(n int, s string) {
 	em := embnats.New()
 	em.KVBucketNew(dflt.EnvString("NATS_BUCKET", "mov"))
