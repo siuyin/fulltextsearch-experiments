@@ -3,6 +3,7 @@ package embnats
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"log"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/siuyin/dflt"
 )
 
+// Server represents an embedded NATS server.
 type Server struct {
 	s  *svr.Server
 	nc *nats.Conn
@@ -18,8 +20,10 @@ type Server struct {
 	kv nats.KeyValue
 }
 
+// New returns a reference to an embedded NATS server.
 func New() *Server {
-	s, err := svr.NewServer(&svr.Options{Port: 4222, JetStream: true})
+	s, err := svr.NewServer(&svr.Options{Port: natsPort(), JetStream: true,
+		StoreDir: dflt.EnvString("NATS_STOREDIR", ".")})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,10 +38,18 @@ func New() *Server {
 	return &em
 }
 
+func natsPort() int {
+	port, err := dflt.EnvInt("NATS_PORT", 4222)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return port
+}
+
 func (s *Server) connectSvr() {
 	waitForSvrRdy(s.s)
 
-	url := dflt.EnvString("NATS_SVR", "nats://localhost:4222")
+	url := fmt.Sprintf("nats://localhost:%d", natsPort())
 	var err error
 	s.nc, err = nats.Connect(url)
 	if err != nil {
@@ -60,6 +72,7 @@ func waitForSvrRdy(s *svr.Server) {
 	}
 }
 
+// KVBucketNew optionally creates and returns a key-value bucket to hold key-value pairs.
 func (s *Server) KVBucketNew(b string) {
 	kv, err := s.js.CreateKeyValue(&nats.KeyValueConfig{Bucket: b})
 	if err != nil {
@@ -69,6 +82,7 @@ func (s *Server) KVBucketNew(b string) {
 	s.kv = kv
 }
 
+// KVPut stores value v associated with key k.
 func (s *Server) KVPut(k string, v []string) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
@@ -77,9 +91,12 @@ func (s *Server) KVPut(k string, v []string) {
 		log.Fatal(err)
 	}
 
-	s.kv.Put(k, buf.Bytes())
+	if _, err := s.kv.Put(k, buf.Bytes()); err != nil {
+		log.Fatal(err)
+	}
 }
 
+// KVGet retrieve the value associated with key k.
 func (s *Server) KVGet(k string) []string {
 	entry, err := s.kv.Get(k)
 	if err != nil {

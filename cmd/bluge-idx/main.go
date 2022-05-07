@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/siuyin/dflt"
 	"github.com/siuyin/fulltextsearch-experiments/doc"
 	"github.com/siuyin/fulltextsearch-experiments/embnats"
 	"github.com/siuyin/fulltextsearch-experiments/idx"
@@ -21,7 +22,7 @@ func main() {
 }
 
 func createFullTextIndex(em *embnats.Server) {
-	em.KVBucketNew("mov")
+	em.KVBucketNew(dflt.EnvString("NATS_BUCKET", "mov"))
 	doc.Init(os.Args[1])
 	idx.InitWriter()
 	defer idx.WriterClose()

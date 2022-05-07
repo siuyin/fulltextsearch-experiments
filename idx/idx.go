@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/blugelabs/bluge"
+	"github.com/siuyin/dflt"
 	"github.com/siuyin/fulltextsearch-experiments/doc"
 	"github.com/siuyin/fulltextsearch-experiments/embnats"
 )
@@ -18,7 +19,7 @@ var (
 )
 
 func InitWriter() {
-	config = bluge.DefaultConfig("/tmp/blugetry")
+	config = bluge.DefaultConfig(dflt.EnvString("BLUGE_PATH", "./blugeidx"))
 	w, err = bluge.OpenWriter(config)
 	if err != nil {
 		log.Fatal(err)
@@ -33,7 +34,7 @@ func WriterClose() {
 }
 
 func InitReader() {
-	config = bluge.DefaultConfig("/tmp/blugetry")
+	config = bluge.DefaultConfig(dflt.EnvString("BLUGE_PATH", "./blugeidx"))
 	config.DefaultSearchField = doc.Title.String()
 	//config.DefaultSearchField = doc.Description.String()
 	r, err = bluge.OpenReader(config)
@@ -73,7 +74,7 @@ func Add(rec []string) {
 
 func TopNSearch(n int, s string) {
 	em := embnats.New()
-	em.KVBucketNew("mov")
+	em.KVBucketNew(dflt.EnvString("NATS_BUCKET", "mov"))
 	q := bluge.NewMatchQuery(s)
 	req := bluge.NewTopNSearch(n, q)
 	log.Println("searching top ", n, s)
