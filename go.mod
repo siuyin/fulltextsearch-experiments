@@ -14,6 +14,7 @@ require (
 	github.com/blugelabs/bluge v0.1.9 // indirect
 	github.com/blugelabs/bluge_segment_api v0.2.0 // indirect
 	github.com/blugelabs/ice v0.2.0 // indirect
+	github.com/blugelabs/query_string v0.3.0 // indirect
 	github.com/caio/go-tdigest v3.1.0+incompatible // indirect
 	github.com/dgryski/go-metro v0.0.0-20180109044635-280f6062b5bc // indirect
 	github.com/golang/snappy v0.0.1 // indirect

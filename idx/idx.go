@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/blugelabs/bluge"
+	querystr "github.com/blugelabs/query_string"
 	"github.com/siuyin/dflt"
 	"github.com/siuyin/fulltextsearch-experiments/doc"
 	"github.com/siuyin/fulltextsearch-experiments/embnats"
@@ -106,16 +107,25 @@ func newDoc(rec []string) *bluge.Document {
 
 // TopNSearch searches for the top n matches given search term s.
 func TopNSearch(n int, s string) {
+	userQuery, err := querystr.ParseQueryString(s, querystr.DefaultOptions())
+	if err != nil {
+		log.Fatalf("errror parsing query string '%s': %v", s, err)
+	}
+
+	q := bluge.NewBooleanQuery().
+		AddMust(userQuery)
+
 	em := embnats.New()
 	em.KVBucketNew(dflt.EnvString("NATS_BUCKET", "mov"))
-	q := bluge.NewMatchQuery(s)
-	req := bluge.NewTopNSearch(n, q)
+	//q := bluge.NewMatchQuery(s).SetField(doc.Description.String())
+	req := bluge.NewTopNSearch(n, q).WithStandardAggregations()
 	log.Println("searching top ", n, s)
 
 	dmi, err := r.Search(context.Background(), req) // dmi: document match iterator
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("total hits: %d (%v) %v\n", dmi.Aggregations().Count(), dmi.Aggregations().Duration(), dmi.Aggregations().Metric("max_score"))
 
 	next, err := dmi.Next()
 	for err == nil && next != nil {
