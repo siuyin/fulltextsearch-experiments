@@ -16,6 +16,9 @@ Then I should see a list of entries,
 ordered most relevant first,
 with my search term highlighted in each entry.
 
+# Components
+[![](https://mermaid.ink/img/pako:eNqFjkFrAjEQhf9KmNMWXHvfQ6GgB7H00C09DZQxmdVANlmSSbui_ndHsefeHu99M--dwCbH0MEQ0q89UBbz9oHRJduskkWMkWUIfv4WL4HL0pafJ4zezc0mOp4V2IW6Z_WKNL2kzGq9v372ZsvH9otCvWX3C9O2L-dSpyl4zuZZOVuLpJHz2Wjf7cM_CCxA5Uje6eATRmMQ5MAjI3QqHQ9UgyBgvChaJ0fCa-d1FXQDhcILoCqpP0YLneTKf9DK0z7T-KAuV5qrY7k)](https://mermaid.live/edit#pako:eNqFjkFrAjEQhf9KmNMWXHvfQ6GgB7H00C09DZQxmdVANlmSSbui_ndHsefeHu99M--dwCbH0MEQ0q89UBbz9oHRJduskkWMkWUIfv4WL4HL0pafJ4zezc0mOp4V2IW6Z_WKNL2kzGq9v372ZsvH9otCvWX3C9O2L-dSpyl4zuZZOVuLpJHz2Wjf7cM_CCxA5Uje6eATRmMQ5MAjI3QqHQ9UgyBgvChaJ0fCa-d1FXQDhcILoCqpP0YLneTKf9DK0z7T-KAuV5qrY7k)
+
 # Executables
 `cmd/bluge-idx/main.go`: creates the index
 
