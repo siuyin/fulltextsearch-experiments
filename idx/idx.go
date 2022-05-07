@@ -107,13 +107,14 @@ func newDoc(rec []string) *bluge.Document {
 
 // TopNSearch searches for the top n matches given search term s.
 func TopNSearch(n int, s string) {
+	// TODO: use this analyser as a query string option:
+	// https://go.dev/play/p/G_KNuNm0c9p
 	userQuery, err := querystr.ParseQueryString(s, querystr.DefaultOptions())
 	if err != nil {
 		log.Fatalf("errror parsing query string '%s': %v", s, err)
 	}
 
-	q := bluge.NewBooleanQuery().
-		AddMust(userQuery)
+	q := bluge.NewBooleanQuery().AddMust(userQuery)
 
 	em := embnats.New()
 	em.KVBucketNew(dflt.EnvString("NATS_BUCKET", "mov"))
@@ -132,7 +133,7 @@ func TopNSearch(n int, s string) {
 		err = next.VisitStoredFields(func(field string, value []byte) bool {
 			if field == "_id" {
 				rec := em.KVGet(string(value))
-				fmt.Println(string(value), next.Score, rec[doc.Type], rec[doc.Title])
+				fmt.Printf("%s %v %q %q %q\n", string(value), next.Score, rec[doc.Type], rec[doc.Title], rec[doc.Cast])
 				fmt.Println("   ", rec[doc.Description])
 			}
 			return true
