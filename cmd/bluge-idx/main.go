@@ -17,8 +17,6 @@ func main() {
 
 	em := embnats.New()
 	createFullTextIndex(em)
-
-	select {} // wait forever
 }
 
 func createFullTextIndex(em *embnats.Server) {
