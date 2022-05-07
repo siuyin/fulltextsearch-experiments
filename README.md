@@ -15,3 +15,8 @@ When I provide a search term
 Then I should see a list of entries,
 ordered most relevant first,
 with my search term highlighted in each entry.
+
+# Executables
+`cmd/bluge-idx/main.go`: creates the index
+
+`cmd/bluge-search/main.go`: searches the index
