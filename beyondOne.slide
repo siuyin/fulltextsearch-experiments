@@ -1,0 +1,88 @@
+# beyondOne™: Full-text search + NATS
+Bluge full-text search with NATS/JetStream Key-Value storage.
+8 May 2022
+Summary: Image a single binary with full-text search capabilities, embedded storage, pub/sub capabilities and syncronisation on connection to the internet!
+
+Loh Siu Yin
+Software Engineer, Beyond Broadcast LLP
+siuyin@beyondbroadcast.com
+
+## Inspiration
+Devices today are immensely powerful.
+Your mobile phone is likely running a 64-bit ARM processor.
+And it has gigabytes of memory and (intermittent) connectivity to the cloud.
+
+What if you could write an application that has local storage,  
+able to communicate to other services on the host (while disconnected from the internet),  
+have powerful Google-like full-text search,  
+and synchronise data automatically to the cloud when internet connectivity is restored?
+
+## Creating a full-text search index
+I will use an experimental full-text indexing library:  
+bluge -- https://blugelabs.com/bluge/
+
+Our main program is trivial:
+
+.code cmd/bluge-idx/main.go /func main\(/,/^}/
+
+We will first look at `createFullTextIndex`.
+
+## createFullTextIndex
+
+.code -numbers cmd/bluge-idx/main.go /func createFullTextIndex\(/,/^}/
+
+Package `doc` reads from a 6,000+ entry netflix shows dataset available from
+https://www.kaggle.com/datasets/yogithasatyasri/netflix-shows-exploratory-analysis
+
+Package `idx` provides full-text indexed search functions.
+
+`batchAdd` is passed an embedded NATS KV stor as well
+as a `batchSize` parameter derived from reading the environment.
+
+
+## batchAdd
+
+.code cmd/bluge-idx/main.go /func batchAdd\(/,/^}/
+
+## idx.AddBatch
+
+.code -numbers idx/idx.go  /func AddBatch\(/,/^}/
+
+## Full-text search returns matching document IDs
+You still need persistence to hold the actual document.
+
+This is where our embedded NATS Key Value storage comes in.
+
+.code -numbers idx/idx.go  /^\t\td := newDoc\(/,/, rec\)/
+
+Let's further explore how that document `d` is created.
+
+## newDoc
+This is how a `bluge` full-text search document is created.
+
+.code idx/idx.go  /func newDoc\(/,/^}/
+
+Eg. NewTextField("Title", "Star Trek")
+
+## Let's create our index
+
+Start from a clean slate -- delete the index and KV store.  
+`rm -rf blugeidx jetstream`
+
+
+Now create the index 2000 entries at a time.  
+`BLUGE_BATCHSIZE=2000 go run cmd/bluge-idx/*.go netflix_titles.csv`
+
+Run some queries:  
+`go build -o /tmp/bSch cmd/bluge-search/*.go`  
+
+`time /tmp/bSch trek`
+
+`/tmp/bSch 'Description:spock'`
+
+`/tmp/bSch 'Title:star  Description:kirk'`   
+`/tmp/bSch 'Title:star +Description:kirk'`
+
+## Code and presentation download
+
+`https://github.com/siuyin/fulltextsearch-experiments`
