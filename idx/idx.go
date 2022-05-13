@@ -91,7 +91,7 @@ func AddBatch(em *embnats.Server, n int) int {
 func newDoc(rec []string) *bluge.Document {
 	d := bluge.NewDocument(rec[doc.ShowID])
 	d.AddField(bluge.NewTextField(doc.Type.String(), rec[doc.Type]))
-	d.AddField(bluge.NewTextField(doc.Title.String(), rec[doc.Title]))
+	d.AddField(bluge.NewTextField(doc.Title.String(), rec[doc.Title]).StoreValue()) // store this value, IDs are automatically stored
 	d.AddField(bluge.NewTextField(doc.Director.String(), rec[doc.Director]))
 	d.AddField(bluge.NewTextField(doc.Cast.String(), rec[doc.Cast]))
 	d.AddField(bluge.NewTextField(doc.Country.String(), rec[doc.Country]))
@@ -100,7 +100,7 @@ func newDoc(rec []string) *bluge.Document {
 	d.AddField(bluge.NewTextField(doc.Rating.String(), rec[doc.Rating]))
 	d.AddField(bluge.NewTextField(doc.Duration.String(), rec[doc.Duration]))
 	d.AddField(bluge.NewTextField(doc.ListedIn.String(), rec[doc.ListedIn]))
-	d.AddField(bluge.NewTextField(doc.Description.String(), rec[doc.Description]))
+	d.AddField(bluge.NewTextField(doc.Description.String(), rec[doc.Description]).StoreValue())
 
 	return d
 }
@@ -109,6 +109,7 @@ func newDoc(rec []string) *bluge.Document {
 func TopNSearch(n int, s string) {
 	// TODO: use this analyser as a query string option:
 	// https://go.dev/play/p/G_KNuNm0c9p
+	// https://pkg.go.dev/github.com/blugelabs/bluge@v0.1.9/analysis/analyzer#NewKeywordAnalyzer
 	userQuery, err := querystr.ParseQueryString(s, querystr.DefaultOptions())
 	if err != nil {
 		log.Fatalf("errror parsing query string '%s': %v", s, err)
@@ -126,22 +127,26 @@ func TopNSearch(n int, s string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("total hits: %d (%v) %v\n", dmi.Aggregations().Count(), dmi.Aggregations().Duration(), dmi.Aggregations().Metric("max_score"))
+	fmt.Printf("total hits: %d (%v) %v\n\n", dmi.Aggregations().Count(), dmi.Aggregations().Duration(), dmi.Aggregations().Metric("max_score"))
 
 	next, err := dmi.Next()
 	for err == nil && next != nil {
+		entry := map[string]string{}
 		err = next.VisitStoredFields(func(field string, value []byte) bool {
-			if field == "_id" {
-				rec := em.KVGet(string(value))
-				fmt.Printf("%s %v %q %q %q\n", string(value), next.Score, rec[doc.Type], rec[doc.Title], rec[doc.Cast])
-				fmt.Println("   ", rec[doc.Description])
-			}
+			// if field == "_id" {
+			// 	rec := em.KVGet(string(value))
+			// 	fmt.Printf("%s %v %q %q %q\n", string(value), next.Score, rec[doc.Type], rec[doc.Title], rec[doc.Cast])
+			// 	fmt.Println("   ", rec[doc.Description])
+			// }
+			entry[field] = string(value)
 			return true
 		})
 
 		if err != nil {
 			log.Fatalf("error accessing stored fields: %v", err)
 		}
+		fmt.Printf("%s %v %s\n%s\n----\n", entry["_id"], next.Score, entry["Title"], entry["Description"])
+
 		next, err = dmi.Next()
 	}
 
