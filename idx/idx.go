@@ -133,23 +133,26 @@ func getRequest(n int, s string) *bluge.TopNSearch {
 }
 
 func iterateAndShow(dmi search.DocumentMatchIterator) {
-	next, err := dmi.Next()
-	for err == nil && next != nil {
-		entry := map[string]string{}
-		err = next.VisitStoredFields(func(field string, value []byte) bool {
-			entry[field] = string(value)
-			return true
-		})
+	match, err := dmi.Next()
+	for err == nil && match != nil {
+		showMatches(match)
 
-		if err != nil {
-			log.Fatalf("error accessing stored fields: %v", err)
-		}
-		fmt.Printf("%s %v %s\n%s\n----\n", entry["_id"], next.Score, entry["Title"], entry["Description"])
-
-		next, err = dmi.Next()
+		match, err = dmi.Next()
 	}
 
 	if err != nil {
 		log.Fatalf("error iterating results: %v", err)
 	}
+}
+func showMatches(match *search.DocumentMatch) {
+	entry := map[string]string{}
+	err = match.VisitStoredFields(func(field string, value []byte) bool {
+		entry[field] = string(value)
+		return true
+	})
+
+	if err != nil {
+		log.Fatalf("error accessing stored fields: %v", err)
+	}
+	fmt.Printf("%s %v %s\n%s\n----\n", entry["_id"], match.Score, entry["Title"], entry["Description"])
 }
