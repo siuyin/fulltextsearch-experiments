@@ -15,18 +15,15 @@ func main() {
 	fmt.Println("full text search with bluge")
 	checkUsage()
 
-	em := embnats.New()
-	createFullTextIndex(em)
+	createFullTextIndex()
 }
 
-func createFullTextIndex(em *embnats.Server) {
-	em.KVBucketNew(dflt.EnvString("NATS_BUCKET", "mov"))
+func createFullTextIndex() {
 	doc.Init(os.Args[1])
 	idx.InitWriter()
 	defer idx.WriterClose()
 
-	//singleAdd(em)
-	batchAdd(em, batchSize())
+	batchAdd(batchSize())
 	fmt.Println("\nindexed and ready for queries")
 }
 
@@ -46,10 +43,10 @@ func singleAdd(em *embnats.Server) {
 	}
 }
 
-func batchAdd(em *embnats.Server, size int) {
+func batchAdd(size int) {
 	n := 0
 	for {
-		n = idx.AddBatch(em, size)
+		n = idx.AddBatch(size)
 		fmt.Print(".")
 		if n != size {
 			break

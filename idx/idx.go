@@ -10,7 +10,6 @@ import (
 	querystr "github.com/blugelabs/query_string"
 	"github.com/siuyin/dflt"
 	"github.com/siuyin/fulltextsearch-experiments/doc"
-	"github.com/siuyin/fulltextsearch-experiments/embnats"
 )
 
 var (
@@ -69,15 +68,13 @@ func Add(rec []string) {
 }
 
 // AddBatch add n documents to the search index and returns the number of entries added.
-func AddBatch(em *embnats.Server, n int) int {
+func AddBatch(n int) int {
 	b := bluge.NewBatch()
 
 	i := 0
 	for rec := doc.Read(); rec != nil; rec = doc.Read() {
 		d := newDoc(rec)
 		b.Update(d.ID(), d)
-		em.KVPut(rec[doc.ShowID], rec)
-		//fmt.Println(i, rec[doc.Title])
 
 		i++
 		if i == n {
@@ -120,7 +117,6 @@ func TopNSearch(n int, s string) {
 	fmt.Printf("total hits: %d (%v) %v\n\n", dmi.Aggregations().Count(), dmi.Aggregations().Duration(), dmi.Aggregations().Metric("max_score"))
 
 	iterateAndShow(dmi)
-
 }
 
 func getRequest(n int, s string) *bluge.TopNSearch {
