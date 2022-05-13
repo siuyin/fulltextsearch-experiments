@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/blugelabs/bluge"
+	"github.com/blugelabs/bluge/search"
 	querystr "github.com/blugelabs/query_string"
 	"github.com/siuyin/dflt"
 	"github.com/siuyin/fulltextsearch-experiments/doc"
@@ -110,18 +111,7 @@ func TopNSearch(n int, s string) {
 	// TODO: use this analyser as a query string option:
 	// https://go.dev/play/p/G_KNuNm0c9p
 	// https://pkg.go.dev/github.com/blugelabs/bluge@v0.1.9/analysis/analyzer#NewKeywordAnalyzer
-	userQuery, err := querystr.ParseQueryString(s, querystr.DefaultOptions())
-	if err != nil {
-		log.Fatalf("errror parsing query string '%s': %v", s, err)
-	}
-
-	q := bluge.NewBooleanQuery().AddMust(userQuery)
-
-	em := embnats.New()
-	em.KVBucketNew(dflt.EnvString("NATS_BUCKET", "mov"))
-	//q := bluge.NewMatchQuery(s).SetField(doc.Description.String())
-	req := bluge.NewTopNSearch(n, q).WithStandardAggregations()
-	log.Println("searching top ", n, s)
+	req := getRequest(n, s)
 
 	dmi, err := r.Search(context.Background(), req) // dmi: document match iterator
 	if err != nil {
@@ -129,15 +119,28 @@ func TopNSearch(n int, s string) {
 	}
 	fmt.Printf("total hits: %d (%v) %v\n\n", dmi.Aggregations().Count(), dmi.Aggregations().Duration(), dmi.Aggregations().Metric("max_score"))
 
+	iterateAndShow(dmi)
+
+}
+
+func getRequest(n int, s string) *bluge.TopNSearch {
+	userQuery, err := querystr.ParseQueryString(s, querystr.DefaultOptions())
+	if err != nil {
+		log.Fatalf("errror parsing query string '%s': %v", s, err)
+	}
+
+	q := bluge.NewBooleanQuery().AddMust(userQuery)
+	req := bluge.NewTopNSearch(n, q).WithStandardAggregations()
+	log.Println("searching top ", n, s)
+
+	return req
+}
+
+func iterateAndShow(dmi search.DocumentMatchIterator) {
 	next, err := dmi.Next()
 	for err == nil && next != nil {
 		entry := map[string]string{}
 		err = next.VisitStoredFields(func(field string, value []byte) bool {
-			// if field == "_id" {
-			// 	rec := em.KVGet(string(value))
-			// 	fmt.Printf("%s %v %q %q %q\n", string(value), next.Score, rec[doc.Type], rec[doc.Title], rec[doc.Cast])
-			// 	fmt.Println("   ", rec[doc.Description])
-			// }
 			entry[field] = string(value)
 			return true
 		})
