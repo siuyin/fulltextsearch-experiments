@@ -144,6 +144,7 @@ func iterateAndShow(dmi search.DocumentMatchIterator) {
 		log.Fatalf("error iterating results: %v", err)
 	}
 }
+
 func showMatches(match *search.DocumentMatch) {
 	entry := map[string]string{}
 	err = match.VisitStoredFields(func(field string, value []byte) bool {
